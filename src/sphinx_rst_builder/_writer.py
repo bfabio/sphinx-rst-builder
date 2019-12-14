@@ -606,8 +606,22 @@ class RstTranslator(TextTranslator):
         self.end_state()
 
     def visit_literal_block(self, node):
-        self.add_text("::")
-        self.new_state(self.indent)
+        if node.rawsource != node.astext():
+            # most probably a parsed-literal block -- don't highlight
+            return super().visit_literal_block(node)
+
+        lang = node.get('language', 'default')
+        linenos = node.get('linenos', False)
+
+        if lang == 'default':
+            self.add_text("::")
+        else:
+            self.add_text(".. code-block:: {}\n".format(lang))
+            if node.get('linenos', False):
+                self.add_text("   :linenos:")
+
+            self.new_state(self.indent)
+
     def depart_literal_block(self, node):
         self.end_state(wrap=False)
 
